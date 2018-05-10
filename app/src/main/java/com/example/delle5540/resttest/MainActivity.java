@@ -118,7 +118,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Response<ResponseBody>> call, Response<Response<ResponseBody>> response) {
                 Log.d("SPANTST ","OnResponse");
-
                 if(!response.isSuccessful()){
 //                    Gson gson = new Gson();
 //                    MyErrorMessage message=gson.fromJson(response.errorBody().charStream(),MyErrorMessage.class);
@@ -130,7 +129,6 @@ public class MainActivity extends AppCompatActivity {
                 }else {
                     Log.d("SPANTST ", "response " + String.valueOf(response.body().toString()));
                     txt_result.setText(response.body().toString());
-
                 }
             }
 

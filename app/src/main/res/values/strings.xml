@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">RESTTest</string>
+    <string name="request_btn">Request</string>
+    <string-array name="Request_type">
+        <item> String value 1</item>
+        <item> String value 2</item>
+        <item> String value 3</item>
+    </string-array>
+</resources>

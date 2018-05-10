@@ -13,6 +13,7 @@ import android.widget.TextView;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
@@ -116,16 +117,20 @@ public class MainActivity extends AppCompatActivity {
         call.enqueue(new Callback<Response<ResponseBody>>() {
             @Override
             public void onResponse(Call<Response<ResponseBody>> call, Response<Response<ResponseBody>> response) {
-                // The network call was a success and we got a response
-                // TODO: use the repository list and display it
-//                Log.d("Response ",response.body().toString();
-//                txt_result.setText(response.body().toString());*/
                 Log.d("SPANTST ","OnResponse");
 
                 if(!response.isSuccessful()){
-                    Gson gson = new Gson();
-                    MyErrorMessage message=gson.fromJson(response.errorBody().charStream(),MyErrorMessage.class);
-                    Log.d("SPANTST ",message.toString());
+//                    Gson gson = new Gson();
+//                    MyErrorMessage message=gson.fromJson(response.errorBody().charStream(),MyErrorMessage.class);
+                    try {
+                        Log.d("SPANTST ", "!!!response " + response.errorBody().string());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }else {
+                    Log.d("SPANTST ", "response " + String.valueOf(response.body().toString()));
+                    txt_result.setText(response.body().toString());
+
                 }
             }
 

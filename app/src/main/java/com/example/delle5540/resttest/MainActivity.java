@@ -5,13 +5,21 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatButton;
 import android.support.v7.widget.AppCompatEditText;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -24,9 +32,45 @@ public class MainActivity extends AppCompatActivity {
     AppCompatEditText edt_email;
     AppCompatButton  Btn;
     OkHttpClient.Builder httpClient;
-    String API_BASE_URL = "https://api.github.com/";
+    String API_BASE_URL = "http://37.57.92.40:8084";
     Retrofit retrofit;
     TextView txt_result;
+
+    protected String toJson(Object obj) throws NullPointerException {
+        GsonBuilder builder = new GsonBuilder();
+        Gson gson = builder.create();
+        String mgson = gson.toJson(obj);
+        return mgson;
+    }
+
+    protected String encode(String gson) {
+        Log.d("RETy", "BaseInteractor encode() gson " + gson);
+        try {
+            byte[] enc = gson.getBytes("UTF-8");
+            String b64 = Base64.encodeToString(enc, Base64.URL_SAFE);
+            b64 = b64.replace("\n", "");
+            b64 = b64.replace("\t", "");
+            b64 = b64.replace("\r", "");
+            return b64;
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            Log.d("RETy", "BaseInteractor encode() UnsupportedEncodingException " + e.getMessage());
+        }
+        return null;
+    }
+
+
+    protected String decode(String gson) {
+        Log.d("RETy", "BaseInteractor decode() gson " + gson);
+        byte[] data = Base64.decode(gson, Base64.URL_SAFE);
+        try {
+            return new String(data, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            Log.d("RETy", "BaseInteractor decode() UnsupportedEncodingException " + e.getMessage());
+        }
+        return null;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,35 +92,49 @@ public class MainActivity extends AppCompatActivity {
 
         retrofit = builder.client( httpClient.build() ) .build();
 
-        GitHubClient client =  retrofit.create(GitHubClient.class);
+        ObscureApi client =  retrofit.create(ObscureApi.class);
     }
 
     public void sendRequest(View view) {
         edt_password.setText("Test");
 
         // Create a very simple REST adapter which points the GitHub API endpoint.
-        GitHubClient client =  retrofit.create(GitHubClient.class);
+        ObscureApi client =  retrofit.create(ObscureApi.class);
 
 // Fetch a list of the Github repositories.
-        Call<List<GitHubRepo>> call = client.reposForUser(edt_email.getText().toString());
+
+        CommonRequest req = new CommonRequest(edt_email.getText().toString(), edt_password.getText().toString());
+        String json = toJson(req);
+        String encoded = encode(json);
+
+        MediaType mediaType = MediaType.parse("application/json");
+        RequestBody body = RequestBody.create(mediaType, "{\"data\""+encoded+"}");
+
+        Call<Response<ResponseBody>> call = client.signIn( body );
 
 // Execute the call asynchronously. Get a positive or negative callback.
-        call.enqueue(new Callback<List<GitHubRepo>>() {
+        call.enqueue(new Callback<Response<ResponseBody>>() {
             @Override
-            public void onResponse(Call<List<GitHubRepo>> call, Response<List<GitHubRepo>> response) {
+            public void onResponse(Call<Response<ResponseBody>> call, Response<Response<ResponseBody>> response) {
                 // The network call was a success and we got a response
                 // TODO: use the repository list and display it
-                for (GitHubRepo input : response.body())
-                {
-                    Log.i("Repositories ",input.getName());
-                    txt_result.setText(txt_result.getText() + "\n " + input.getName());
+//                Log.d("Response ",response.body().toString();
+//                txt_result.setText(response.body().toString());*/
+                Log.d("SPANTST ","OnResponse");
+
+                if(!response.isSuccessful()){
+                    Gson gson = new Gson();
+                    MyErrorMessage message=gson.fromJson(response.errorBody().charStream(),MyErrorMessage.class);
+                    Log.d("SPANTST ",message.toString());
                 }
             }
 
             @Override
-            public void onFailure(Call<List<GitHubRepo>> call, Throwable t) {
+            public void onFailure(Call<Response<ResponseBody>> call, Throwable t) {
                 // the network call was a failure
                 // TODO: handle error
+                txt_result.setText(t.getMessage());
+                Log.d("SPANTST ",t.getMessage());
             }
         });
     }
